@@ -346,6 +346,38 @@ public class InfoCenterPane extends StackPane {
         slideInDurationProperty().set(duration);
     }
 
+    // info center view position
+
+    private ObjectProperty<InfoCenterViewPos> infoCenterViewPos;
+
+    public final InfoCenterViewPos getInfoCenterViewPos() {
+        return infoCenterViewPos == null ? InfoCenterViewPos.TOP_RIGHT : infoCenterViewPos.get();
+    }
+
+    /**
+     * The position of the {@link InfoCenterView} within this pane. The horizontal
+     * component determines which side the info center slides in from (left or right),
+     * and the vertical component determines whether it is placed at the top, center,
+     * or bottom. The default value is {@link InfoCenterViewPos#TOP_RIGHT}.
+     *
+     * @return the position of the info center view
+     */
+    public final ObjectProperty<InfoCenterViewPos> infoCenterViewPosProperty() {
+        if (infoCenterViewPos == null) {
+            infoCenterViewPos = new SimpleObjectProperty<>(this, "infoCenterViewPos", InfoCenterViewPos.TOP_RIGHT) {
+                @Override
+                protected void invalidated() {
+                    requestLayout();
+                }
+            };
+        }
+        return infoCenterViewPos;
+    }
+
+    public final void setInfoCenterViewPos(InfoCenterViewPos infoCenterViewPos) {
+        infoCenterViewPosProperty().set(infoCenterViewPos);
+    }
+
     private BooleanProperty showInfoCenter;
 
     public final boolean isShowInfoCenter() {
@@ -482,15 +514,43 @@ public class InfoCenterPane extends StackPane {
         // special layout for the info center view based on the animation progress / visibility
         InfoCenterView view = getInfoCenterView();
         if (view != null) {
+            InfoCenterViewPos position = getInfoCenterViewPos();
+
             double prefWidth = view.prefWidth(-1);
             double prefHeight = view.prefHeight(prefWidth);
             double v = visibility.get();
             double offset = prefWidth * v;
-            if (view.getShowAllGroup() != null) {
-                view.resizeRelocate(contentX + contentWidth - offset, contentY, prefWidth, contentHeight);
+
+            double viewX;
+            if (position.isLeft()) {
+                viewX = contentX - prefWidth + offset;
             } else {
-                view.resizeRelocate(contentX + contentWidth - offset, contentY, prefWidth, Math.min(contentHeight, prefHeight));
+                viewX = contentX + contentWidth - offset;
             }
+
+            double viewHeight;
+            if (view.getShowAllGroup() != null) {
+                viewHeight = contentHeight;
+            } else {
+                viewHeight = Math.min(contentHeight, prefHeight);
+            }
+
+            double viewY;
+            switch (position) {
+                case BOTTOM_LEFT:
+                case BOTTOM_RIGHT:
+                    viewY = contentY + contentHeight - viewHeight;
+                    break;
+                case CENTER_LEFT:
+                case CENTER_RIGHT:
+                    viewY = contentY + (contentHeight - viewHeight) / 2;
+                    break;
+                default:
+                    viewY = contentY;
+                    break;
+            }
+
+            view.resizeRelocate(viewX, viewY, prefWidth, viewHeight);
             view.setVisible(v > 0);
         }
     }
