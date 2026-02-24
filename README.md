@@ -293,6 +293,9 @@ However, it is also possible to force the sidebar to be displayed regardless of 
 
 ## ThreeItemsPane
 
+
+<span id="three-items-pane"></span>
+
 A container that lays out three nodes on the positions left, center, right (when horizontal), or top, center, bottom (when vertical).
 The container ensures that the center node is truly always centered, independent of the size of the left, right (or top / bottom) nodes.
 
