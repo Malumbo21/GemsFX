@@ -11,6 +11,7 @@ import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.MultipleSelectionModel;
@@ -52,7 +53,7 @@ public class TagsField<T> extends SearchField<T> {
         getStyleClass().addAll("text-input", DEFAULT_STYLE_CLASS);
 
         setFocusTraversable(false);
-        setGraphic(null); // remove history button
+        setGraphic(null); // remove the history button
 
         getEditor().focusedProperty().addListener(it -> {
             if (getEditor().isFocused()) {
@@ -110,6 +111,11 @@ public class TagsField<T> extends SearchField<T> {
     @Override
     public String getUserAgentStylesheet() {
         return Objects.requireNonNull(TagsField.class.getResource("tags-field.css")).toExternalForm();
+    }
+
+    @Override
+    public Orientation getContentBias() {
+        return Orientation.HORIZONTAL;
     }
 
     /**
