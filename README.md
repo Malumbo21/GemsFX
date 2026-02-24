@@ -42,7 +42,7 @@ implementation 'com.dlsc.gemsfx:gemsfx:2.16.0'
 - #### Text Input Controls
   [SearchTextField](#search-text-field), [SearchField](#search-field), [EnhancedPasswordField](#enhanced-password-field), [EmailField](#email-field), [TagsField](#tags-field), [ExpandingTextArea](#expanding-text-area), [ResizableTextArea](#resizable-text-area), [LimitedTextArea](#limited-text-area)
 - #### Advanced Panes
-  [DialogPane](#dialog-pane), [DrawerStackPane](#drawer-stack-pane), [PowerPane](#power-pane), [ResponsivePane](#responsive-pane)
+  [DialogPane](#dialog-pane), [DrawerStackPane](#drawer-stack-pane), [PowerPane](#power-pane), [ResponsivePane](#responsive-pane), [ThreeItemsPane](#three-items-pane)
 - #### Image controls
   [PhotoView](#photo-view), [AvatarView](#avatar-view), [PaymentOptionControls](#payment-option-controls), [SVGImageView](#svg-image-view)
 - #### Other Controls
@@ -290,6 +290,11 @@ pane.
 However, it is also possible to force the sidebar to be displayed regardless of the window size.
 
 ![ResponsivePane](gemsfx/docs/responsive-pane.png)
+
+## ThreeItemsPane
+
+A container that lays out three nodes on the positions left, center, right (when horizontal), or top, center, bottom (when vertical).
+The container ensures that the center node is truly always centered, independent of the size of the left, right (or top / bottom) nodes.
 
 ## Photo View
 
