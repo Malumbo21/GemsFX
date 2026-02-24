@@ -4,7 +4,7 @@
 }
 
 .info-center-view > .main-pane {
-    -fx-padding: 10px 10px 10px 0px;
+    -fx-padding: 10px;
 }
 
 .info-center-view > .main-pane > .default-placeholder {
