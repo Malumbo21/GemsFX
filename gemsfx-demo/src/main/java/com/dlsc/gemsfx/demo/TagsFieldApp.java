@@ -145,6 +145,7 @@ public class TagsFieldApp extends GemApplication {
         VBox vbox = new VBox(20, createNewItemBox, showPromptText, usePlaceholder, hideWithSingleChoiceBox, showSearchIconBox, showLeftRightNodes, singleSelectionBox, hBox, hBox2, hBox2a, hBox3, hBox4, buttonBox, field);
         vbox.setPadding(new Insets(20));
 
+        field.getTags().add(new Country("Germany"));
         CSSFX.start();
 
         Scene scene = new Scene(vbox);
