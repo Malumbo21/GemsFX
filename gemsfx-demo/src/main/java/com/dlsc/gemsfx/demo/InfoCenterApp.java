@@ -3,6 +3,7 @@ package com.dlsc.gemsfx.demo;
 import atlantafx.base.theme.NordDark;
 import atlantafx.base.theme.NordLight;
 import com.dlsc.gemsfx.infocenter.InfoCenterPane;
+import com.dlsc.gemsfx.infocenter.InfoCenterViewPos;
 import com.dlsc.gemsfx.infocenter.InfoCenterView;
 import com.dlsc.gemsfx.infocenter.Notification;
 import com.dlsc.gemsfx.infocenter.Notification.OnClickBehaviour;
@@ -15,6 +16,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.image.Image;
@@ -147,6 +149,12 @@ public class InfoCenterApp extends GemApplication {
         transparentButton.setMaxWidth(Double.MAX_VALUE);
         transparentButton.selectedProperty().bindBidirectional(infoCenterView.transparentProperty());
 
+        ComboBox<InfoCenterViewPos> infoCenterViewPosition = new ComboBox<>();
+        infoCenterViewPosition.getItems().addAll(InfoCenterViewPos.values());
+        infoCenterViewPosition.setValue(infoCenterPane.getInfoCenterViewPos());
+        infoCenterViewPosition.setMaxWidth(Double.MAX_VALUE);
+        infoCenterViewPosition.valueProperty().bindBidirectional(infoCenterPane.infoCenterViewPosProperty());
+
         Button scenicView = new Button("Scenic View");
         scenicView.setOnAction(evt -> ScenicView.show(infoCenterView.getScene()));
         scenicView.setMaxWidth(Double.MAX_VALUE);
@@ -171,13 +179,13 @@ public class InfoCenterApp extends GemApplication {
         }
         counterLabel.textProperty().bind(Bindings.createStringBinding(() -> "Count: " + infoCenterView.getUnmodifiableNotifications().size(), infoCenterView.getUnmodifiableNotifications()));
 
-        VBox buttonBox = new VBox(10, showNotifications, hideNotifications, pinNotifications, autoOpenGroups, randomNotification, manyNotifications, clearAll, transparentButton, darkMode, scenicView, counterLabel);
+        VBox buttonBox = new VBox(10, showNotifications, hideNotifications, pinNotifications, autoOpenGroups, randomNotification, manyNotifications, clearAll, transparentButton, darkMode, infoCenterViewPosition, scenicView, counterLabel);
         buttonBox.getStyleClass().add("button-box");
         buttonBox.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
-        buttonBox.setTranslateX(50);
         buttonBox.setTranslateY(50);
 
-        StackPane.setAlignment(buttonBox, Pos.TOP_LEFT);
+        infoCenterPane.infoCenterViewPosProperty().addListener((obs, oldPos, newPos) -> updateButtonBoxAlignment(buttonBox, newPos));
+        updateButtonBoxAlignment(buttonBox, infoCenterPane.getInfoCenterViewPos());
 
         StackPane background = new StackPane(buttonBox);
         if (atlantafx) {
@@ -210,6 +218,31 @@ public class InfoCenterApp extends GemApplication {
         stage.show();
 
         infoCenterPane.setPinned(true);
+    }
+
+    private void updateButtonBoxAlignment(VBox buttonBox, InfoCenterViewPos pos) {
+        boolean left = pos.isLeft();
+        Pos alignment;
+        double translateY;
+        switch (pos) {
+            case BOTTOM_LEFT:
+            case BOTTOM_RIGHT:
+                alignment = left ? Pos.BOTTOM_RIGHT : Pos.BOTTOM_LEFT;
+                translateY = -50;
+                break;
+            case CENTER_LEFT:
+            case CENTER_RIGHT:
+                alignment = left ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT;
+                translateY = 0;
+                break;
+            default:
+                alignment = left ? Pos.TOP_RIGHT : Pos.TOP_LEFT;
+                translateY = 50;
+                break;
+        }
+        StackPane.setAlignment(buttonBox, alignment);
+        buttonBox.setTranslateX(left ? -50 : 50);
+        buttonBox.setTranslateY(translateY);
     }
 
     private void assignNotification(Notification<?> notification) {
