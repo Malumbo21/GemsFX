@@ -192,7 +192,11 @@ public class CalendarViewSkin extends SkinBase<CalendarView> {
 
         StackPane incrementYearButton = new StackPane(incrementYearArrow);
         incrementYearButton.getStyleClass().add("increment-year-button");
-        incrementYearButton.setOnMouseClicked(evt -> view.setYearMonth(view.getYearMonth().plusYears(1)));
+        incrementYearButton.setOnMouseClicked(evt -> {
+            if (view.getYearMonth() != null) {
+                view.setYearMonth(view.getYearMonth().plusYears(1));
+            }
+        });
         incrementYearButton.disableProperty().bind(view.disableNextYearButtonProperty());
 
         StackPane decrementYearArrow = new StackPane();
@@ -200,7 +204,11 @@ public class CalendarViewSkin extends SkinBase<CalendarView> {
 
         StackPane decrementYearButton = new StackPane(decrementYearArrow);
         decrementYearButton.getStyleClass().add("decrement-year-button");
-        decrementYearButton.setOnMouseClicked(evt -> view.setYearMonth(view.getYearMonth().minusYears(1)));
+        decrementYearButton.setOnMouseClicked(evt -> {
+            if (view.getYearMonth() != null) {
+                view.setYearMonth(view.getYearMonth().minusYears(1));
+            }
+        });
         decrementYearButton.disableProperty().bind(view.disablePreviousYearButtonProperty());
 
         VBox yearSpinnerBox = new VBox(incrementYearButton, decrementYearButton);
@@ -217,7 +225,9 @@ public class CalendarViewSkin extends SkinBase<CalendarView> {
 
         StackPane previousArrowButton = new StackPane(previousMonthArrow);
         previousArrowButton.getStyleClass().addAll("arrow-button", "previous-month-button");
-        previousArrowButton.setOnMouseClicked(evt -> view.setYearMonth(view.getYearMonth().minusMonths(1)));
+        previousArrowButton.setOnMouseClicked(evt -> {
+            if (view.getYearMonth() != null) view.setYearMonth(view.getYearMonth().minusMonths(1));
+        });
         previousArrowButton.visibleProperty().bind(view.showMonthArrowsProperty().and(view.showMonthProperty()));
         previousArrowButton.managedProperty().bind(previousArrowButton.visibleProperty());
         previousArrowButton.disableProperty().bind(view.disablePreviousMonthButtonProperty());
@@ -227,7 +237,11 @@ public class CalendarViewSkin extends SkinBase<CalendarView> {
 
         StackPane nextMonthArrowButton = new StackPane(nextMonthArrow);
         nextMonthArrowButton.getStyleClass().addAll("arrow-button", "next-month-button");
-        nextMonthArrowButton.setOnMouseClicked(evt -> view.setYearMonth(view.getYearMonth().plusMonths(1)));
+        nextMonthArrowButton.setOnMouseClicked(evt -> {
+            if (view.getYearMonth() != null) {
+                view.setYearMonth(view.getYearMonth().plusMonths(1));
+            }
+        });
         nextMonthArrowButton.visibleProperty().bind(view.showMonthArrowsProperty().and(view.showMonthProperty()));
         nextMonthArrowButton.managedProperty().bind(nextMonthArrowButton.visibleProperty());
         nextMonthArrowButton.disableProperty().bind(view.disableNextMonthButtonProperty());
