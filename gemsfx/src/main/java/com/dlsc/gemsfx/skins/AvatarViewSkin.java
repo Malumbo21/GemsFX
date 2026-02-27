@@ -31,6 +31,18 @@ public class AvatarViewSkin extends SkinBase<AvatarView> {
         }
     };
 
+    private final InvalidationListener updateViewListener = it -> updateView();
+
+    private final ChangeListener<Image> imageChangeListener = (ob, oldImage, newImage) -> {
+        if (oldImage != null) {
+            oldImage.progressProperty().removeListener(progressChangeListener);
+        }
+        if (newImage != null) {
+            newImage.progressProperty().addListener(progressChangeListener);
+        }
+        updateView();
+    };
+
     public AvatarViewSkin(AvatarView avatar) {
         super(avatar);
 
@@ -72,17 +84,7 @@ public class AvatarViewSkin extends SkinBase<AvatarView> {
         textWrapper = createWrapperStackPane(initialsText);
         textWrapper.getStyleClass().add("text-wrapper");
 
-        ChangeListener<Image> imageChangeListener = (ob, oldImage, newImage) -> {
-            if (oldImage != null) {
-                oldImage.progressProperty().removeListener(progressChangeListener);
-            }
-
-            if (newImage != null) {
-                newImage.progressProperty().addListener(progressChangeListener);
-            }
-
-            updateView();
-        };
+        avatar.imageProperty().addListener(imageChangeListener);
 
         avatar.imageProperty().addListener(imageChangeListener);
 
@@ -91,7 +93,6 @@ public class AvatarViewSkin extends SkinBase<AvatarView> {
             image.progressProperty().addListener(progressChangeListener);
         }
 
-        InvalidationListener updateViewListener = it -> updateView();
         avatar.imageProperty().addListener(updateViewListener);
         avatar.initialsProperty().addListener(updateViewListener);
 
@@ -135,6 +136,19 @@ public class AvatarViewSkin extends SkinBase<AvatarView> {
                 return rectangle;
             }
         }, avatarView.avatarShapeProperty()));
+    }
+
+    @Override
+    public void dispose() {
+        AvatarView avatar = getSkinnable();
+        Image currentImage = avatar.getImage();
+        if (currentImage != null) {
+            currentImage.progressProperty().removeListener(progressChangeListener);
+        }
+        avatar.imageProperty().removeListener(imageChangeListener);
+        avatar.imageProperty().removeListener(updateViewListener);
+        avatar.initialsProperty().removeListener(updateViewListener);
+        super.dispose();
     }
 
     private void updateView() {

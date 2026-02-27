@@ -8,6 +8,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.geometry.HPos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -41,6 +42,9 @@ public class PagingControlsSkin extends SkinBase<PagingControls> {
     private GridPane pageButtonsGridPane;
     private int column;
 
+    private final InvalidationListener buildViewListener = it -> updateView();
+    private final ChangeListener<Number> pageScrollListener;
+
     /*
      * We do not want to see the page size selector if the page sizes shown inside the selector are all bigger
      * than the total number of items.
@@ -69,12 +73,23 @@ public class PagingControlsSkin extends SkinBase<PagingControls> {
     public PagingControlsSkin(PagingControls view) {
         super(view);
 
+        pageScrollListener = (obs, oldPage, newPage) -> {
+            int startPage = this.startPage.get();
+            int maxPageIndicatorCount = view.getMaxPageIndicatorsCount();
+
+            if (newPage.intValue() < startPage) {
+                this.startPage.set(Math.min(newPage.intValue(), Math.max(0, startPage - maxPageIndicatorCount)));
+            } else if (newPage.intValue() > startPage + maxPageIndicatorCount - 1) {
+                this.startPage.set(Math.max(newPage.intValue(), startPage + maxPageIndicatorCount));
+            }
+
+            updateView();
+        };
+
         createStaticElements();
 
         pageButtonsBox.visibleProperty().bind(view.pageCountProperty().greaterThan(1));
         pageButtonsBox.managedProperty().bind(view.pageCountProperty().greaterThan(1));
-
-        InvalidationListener buildViewListener = it -> updateView();
 
         view.pageProperty().addListener(buildViewListener);
         view.pageCountProperty().addListener(buildViewListener);
@@ -88,18 +103,7 @@ public class PagingControlsSkin extends SkinBase<PagingControls> {
 
         startPage.addListener(buildViewListener);
 
-        view.pageProperty().addListener((obs, oldPage, newPage) -> {
-            int startPage = this.startPage.get();
-            int maxPageIndicatorCount = view.getMaxPageIndicatorsCount();
-
-            if (newPage.intValue() < startPage) {
-                this.startPage.set(Math.min(newPage.intValue(), Math.max(0, startPage - maxPageIndicatorCount)));
-            } else if (newPage.intValue() > startPage + maxPageIndicatorCount - 1) {
-                this.startPage.set(Math.max(newPage.intValue(), startPage + maxPageIndicatorCount));
-            }
-
-            updateView();
-        });
+        view.pageProperty().addListener(pageScrollListener);
 
         updateView();
 
@@ -107,6 +111,23 @@ public class PagingControlsSkin extends SkinBase<PagingControls> {
             view.getProperties().remove("controls.needed");
             view.getProperties().put("controls.needed", needed);
         });
+    }
+
+    @Override
+    public void dispose() {
+        PagingControls view = getSkinnable();
+        view.pageProperty().removeListener(buildViewListener);
+        view.pageCountProperty().removeListener(buildViewListener);
+        view.pageSizeProperty().removeListener(buildViewListener);
+        view.showPageSizeSelectorProperty().removeListener(buildViewListener);
+        view.maxPageIndicatorsCountProperty().removeListener(buildViewListener);
+        view.firstLastPageDisplayModeProperty().removeListener(buildViewListener);
+        view.alignmentProperty().removeListener(buildViewListener);
+        view.firstPageDividerProperty().removeListener(buildViewListener);
+        view.sameWidthPageButtonsProperty().removeListener(buildViewListener);
+        startPage.removeListener(buildViewListener);
+        view.pageProperty().removeListener(pageScrollListener);
+        super.dispose();
     }
 
     private void createStaticElements() {

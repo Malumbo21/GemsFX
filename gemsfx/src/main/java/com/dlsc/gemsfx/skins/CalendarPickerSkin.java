@@ -25,15 +25,20 @@ public class CalendarPickerSkin extends ToggleVisibilityComboBoxSkin<CalendarPic
     private final TextField editor;
     private final StackPane arrowButton;
 
+    private final ChangeListener<LocalDate> valueChangeListener = (obs, ov, nv) -> {
+        if (view != null) {
+            LocalDate date = getSkinnable().getValue();
+            view.setYearMonth(date == null ? YearMonth.now() : YearMonth.from(date));
+        }
+    };
+
+    private final ChangeListener<SelectionModel> selectionModelChangeListener = (obs, oldModel, newModel) ->
+            bindSelectionModel(oldModel, newModel);
+
     public CalendarPickerSkin(CalendarPicker picker) {
         super(picker);
 
-        picker.valueProperty().addListener(it -> {
-            if (view != null) {
-                LocalDate date = picker.getValue();
-                view.setYearMonth(date == null ? YearMonth.now() : YearMonth.from(date));
-            }
-        });
+        picker.valueProperty().addListener(valueChangeListener);
 
         Region arrow = new Region();
         arrow.getStyleClass().add("arrow");
@@ -90,11 +95,21 @@ public class CalendarPickerSkin extends ToggleVisibilityComboBoxSkin<CalendarPic
                 view.getSelectionModel().select(pickerValue);
             }
             view.setFocusTraversable(false); // keep the picker focused / blue border
-            view.selectionModelProperty().addListener((obs, oldModel, newModel) -> bindSelectionModel(oldModel, newModel));
+            view.selectionModelProperty().addListener(selectionModelChangeListener);
             bindSelectionModel(null, view.getSelectionModel());
         }
 
         return view;
+    }
+
+    @Override
+    public void dispose() {
+        getSkinnable().valueProperty().removeListener(valueChangeListener);
+        if (view != null) {
+            view.selectionModelProperty().removeListener(selectionModelChangeListener);
+            bindSelectionModel(view.getSelectionModel(), null);
+        }
+        super.dispose();
     }
 
     private final ChangeListener<LocalDate> localDateChangeListener = (obs, oldValue, newValue) -> {

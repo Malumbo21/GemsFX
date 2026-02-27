@@ -5,6 +5,8 @@ import com.dlsc.gemsfx.paging.PagingListView;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
+import javafx.beans.value.ChangeListener;
+import javafx.collections.ListChangeListener;
 import javafx.css.PseudoClass;
 import javafx.geometry.Side;
 import javafx.scene.Node;
@@ -29,6 +31,11 @@ public class PagingListViewSkin<T> extends SkinBase<PagingListView<T>> {
 
     private final ListView<T> innerListView;
 
+    private final InvalidationListener updateStyleClassListener = it -> updateStyleClass();
+    private final ChangeListener<Node> placeholderChangeListener = (obs, oldPlaceholder, newPlaceholder) -> bindPlaceholderVisibility(oldPlaceholder, newPlaceholder);
+    private final ListChangeListener<Object> itemsOnCurrentPageListener = it -> bindPlaceholderVisibility(null, getSkinnable().getPlaceholder());
+    private final InvalidationListener updateViewListener = it -> updateView();
+
     public PagingListViewSkin(PagingListView<T> pagingListView) {
         super(pagingListView);
 
@@ -51,15 +58,14 @@ public class PagingListViewSkin<T> extends SkinBase<PagingListView<T>> {
 
         content.getStyleClass().add("content");
 
-        pagingListView.usingScrollPaneProperty().addListener(it -> updateStyleClass());
+        pagingListView.usingScrollPaneProperty().addListener(updateStyleClassListener);
 
-        pagingListView.placeholderProperty().addListener((obs, oldPlaceholder, newPlaceholder) -> bindPlaceholderVisibility(oldPlaceholder, newPlaceholder));
+        pagingListView.placeholderProperty().addListener(placeholderChangeListener);
         bindPlaceholderVisibility(null, pagingListView.getPlaceholder());
 
         // when the underlying data list changes, then we have to recreate the binding for the placeholder
-        pagingListView.getItemsOnCurrentPage().addListener((Observable it) -> bindPlaceholderVisibility(null, pagingListView.getPlaceholder()));
+        pagingListView.getItemsOnCurrentPage().addListener(itemsOnCurrentPageListener);
 
-        InvalidationListener updateViewListener = it -> updateView();
         pagingListView.usingScrollPaneProperty().addListener(updateViewListener);
         pagingListView.placeholderProperty().addListener(updateViewListener);
         pagingListView.pagingControlsLocationProperty().addListener(updateViewListener);
@@ -69,6 +75,18 @@ public class PagingListViewSkin<T> extends SkinBase<PagingListView<T>> {
 
         updateStyleClass();
         updateView();
+    }
+
+    @Override
+    public void dispose() {
+        PagingListView<T> pagingListView = getSkinnable();
+        pagingListView.usingScrollPaneProperty().removeListener(updateStyleClassListener);
+        pagingListView.placeholderProperty().removeListener(placeholderChangeListener);
+        pagingListView.getItemsOnCurrentPage().removeListener(itemsOnCurrentPageListener);
+        pagingListView.usingScrollPaneProperty().removeListener(updateViewListener);
+        pagingListView.placeholderProperty().removeListener(updateViewListener);
+        pagingListView.pagingControlsLocationProperty().removeListener(updateViewListener);
+        super.dispose();
     }
 
     private void updateStyleClass() {

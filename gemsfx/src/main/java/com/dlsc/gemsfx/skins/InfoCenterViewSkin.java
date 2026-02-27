@@ -470,9 +470,23 @@ public class InfoCenterViewSkin extends SkinBase<InfoCenterView> {
         private final InvalidationListener spacingListener = it -> layoutChildren();
         private final WeakInvalidationListener weakSpacingListener = new WeakInvalidationListener(spacingListener);
 
+        private final InvalidationListener maxNotificationsListener = it -> createNotificationViews();
+        private final WeakInvalidationListener weakMaxNotificationsListener = new WeakInvalidationListener(maxNotificationsListener);
+
+        private final InvalidationListener pinnedListener = it -> updateStyleClass();
+        private final WeakInvalidationListener weakPinnedListener = new WeakInvalidationListener(pinnedListener);
+
+        private InvalidationListener expandedListener;
+        private WeakInvalidationListener weakExpandedListener;
+
 
         public GroupView(NotificationGroup<T, S> group) {
             this.group = group;
+            expandedListener = it -> {
+                updateStyleClass();
+                animate(group.isExpanded());
+            };
+            weakExpandedListener = new WeakInvalidationListener(expandedListener);
             getStyleClass().add("group-view");
 
             headerBox.getStyleClass().add("header");
@@ -525,14 +539,11 @@ public class InfoCenterViewSkin extends SkinBase<InfoCenterView> {
              * We might have too many notification views when this property changes,
              * so we have to rebuild them.
              */
-            group.maximumNumberOfNotificationsProperty().addListener(it -> createNotificationViews());
+            group.maximumNumberOfNotificationsProperty().addListener(weakMaxNotificationsListener);
 
-            group.pinnedProperty().addListener(it -> updateStyleClass());
+            group.pinnedProperty().addListener(weakPinnedListener);
 
-            group.expandedProperty().addListener(it -> {
-                updateStyleClass();
-                animate(group.isExpanded());
-            });
+            group.expandedProperty().addListener(weakExpandedListener);
 
             expansionProgressProperty().addListener(it -> layoutChildren());
 

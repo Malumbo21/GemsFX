@@ -31,6 +31,8 @@ public class DurationPickerSkin extends ToggleVisibilityComboBoxSkin<DurationPic
 
     private Node popupContent;
 
+    private final InvalidationListener buildViewListener = it -> buildView();
+
     public DurationPickerSkin(DurationPicker picker) {
         super(picker);
 
@@ -48,8 +50,7 @@ public class DurationPickerSkin extends ToggleVisibilityComboBoxSkin<DurationPic
         arrowButton.visibleProperty().bind(picker.showPopupTriggerButtonProperty());
         arrowButton.managedProperty().bind(picker.showPopupTriggerButtonProperty());
 
-        InvalidationListener updateListener = it -> buildView();
-        picker.fieldsProperty().addListener(updateListener);
+        picker.fieldsProperty().addListener(buildViewListener);
 
         innerBox.getStyleClass().add("fields-box");
         innerBox.setAlignment(Pos.CENTER_LEFT);
@@ -62,8 +63,16 @@ public class DurationPickerSkin extends ToggleVisibilityComboBoxSkin<DurationPic
         getChildren().add(box);
 
         registerChangeListener(picker.buttonDisplayProperty(), it -> updateBox());
-        picker.separatorFactoryProperty().addListener(it -> buildView());
+        picker.separatorFactoryProperty().addListener(buildViewListener);
         buildView();
+    }
+
+    @Override
+    public void dispose() {
+        DurationPicker picker = getSkinnable();
+        picker.fieldsProperty().removeListener(buildViewListener);
+        picker.separatorFactoryProperty().removeListener(buildViewListener);
+        super.dispose();
     }
 
     @Override

@@ -29,6 +29,9 @@ public class EmailFieldSkin extends SkinBase<EmailField> {
 
     private final CustomTextField customTextField;
     private final DomainPopup domainPopup;
+    private javafx.beans.value.ChangeListener<String> invalidTextListener;
+    private javafx.util.Subscription textSubscription;
+    private javafx.util.Subscription focusedSubscription;
 
     public EmailFieldSkin(EmailField field) {
         super(field);
@@ -55,7 +58,8 @@ public class EmailFieldSkin extends SkinBase<EmailField> {
         Tooltip invalidToolTip = new Tooltip();
         invalidToolTip.textProperty().bind(field.invalidTextProperty());
         updateTooltipVisibility(field.getInvalidText(), rightIconWrapper, invalidToolTip);
-        field.invalidTextProperty().addListener((ob, ov, newValue) -> updateTooltipVisibility(newValue, rightIconWrapper, invalidToolTip));
+        invalidTextListener = (ob, ov, newValue) -> updateTooltipVisibility(newValue, rightIconWrapper, invalidToolTip);
+        field.invalidTextProperty().addListener(invalidTextListener);
 
         customTextField.promptTextProperty().bind(field.promptTextProperty());
         customTextField.setLeft(leftIconWrapper);
@@ -63,8 +67,20 @@ public class EmailFieldSkin extends SkinBase<EmailField> {
 
         getChildren().setAll(customTextField);
 
-        customTextField.textProperty().subscribe(this::handleSuggestionPopupVisibility);
-        customTextField.focusedProperty().subscribe(this::handleSuggestionPopupVisibility);
+        textSubscription = customTextField.textProperty().subscribe(this::handleSuggestionPopupVisibility);
+        focusedSubscription = customTextField.focusedProperty().subscribe(this::handleSuggestionPopupVisibility);
+    }
+
+    @Override
+    public void dispose() {
+        getSkinnable().invalidTextProperty().removeListener(invalidTextListener);
+        if (textSubscription != null) {
+            textSubscription.unsubscribe();
+        }
+        if (focusedSubscription != null) {
+            focusedSubscription.unsubscribe();
+        }
+        super.dispose();
     }
 
     private void updateTooltipVisibility(String invalidText, StackPane node, Tooltip invalidToolTip) {

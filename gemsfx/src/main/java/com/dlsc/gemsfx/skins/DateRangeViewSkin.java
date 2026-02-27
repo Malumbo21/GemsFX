@@ -6,7 +6,10 @@ import com.dlsc.gemsfx.daterange.DateRange;
 import com.dlsc.gemsfx.daterange.DateRangePreset;
 import com.dlsc.gemsfx.daterange.DateRangeView;
 import javafx.beans.Observable;
+import javafx.beans.InvalidationListener;
 import javafx.beans.binding.Bindings;
+import javafx.beans.value.ChangeListener;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
 import javafx.geometry.Side;
@@ -36,6 +39,11 @@ public class DateRangeViewSkin extends SkinBase<DateRangeView> {
     private final HBox container;
     private final Label toLabel;
     private boolean updatingMonths;
+
+    private final ChangeListener<DateRange> valueChangeListener = (obs, oldRange, newRange) -> applyRangeToMonthViews(newRange);
+    private final ListChangeListener<Object> presetsChangeListener = it -> updatePresetsView();
+    private final InvalidationListener orientationChangeListener = it -> updateCalendarLayout();
+    private final InvalidationListener presetsLocationChangeListener = it -> updateLayout();
 
     public DateRangeViewSkin(DateRangeView view) {
         super(view);
@@ -149,13 +157,11 @@ public class DateRangeViewSkin extends SkinBase<DateRangeView> {
         HBox.setHgrow(endCalendarView, Priority.ALWAYS);
         HBox.setHgrow(presetsBox, Priority.ALWAYS);
 
-        view.valueProperty().addListener((obs, oldRange, newRange) -> {
-            applyRangeToMonthViews(newRange);
-        });
+        view.valueProperty().addListener(valueChangeListener);
 
-        view.getPresets().addListener((Observable it) -> updatePresetsView());
-        view.orientationProperty().addListener(it -> updateCalendarLayout());
-        view.presetsLocationProperty().addListener(it -> updateLayout());
+        view.getPresets().addListener(presetsChangeListener);
+        view.orientationProperty().addListener(orientationChangeListener);
+        view.presetsLocationProperty().addListener(presetsLocationChangeListener);
 
         getChildren().add(container);
 
@@ -164,6 +170,16 @@ public class DateRangeViewSkin extends SkinBase<DateRangeView> {
         updateLayout();
 
         applyRangeToMonthViews(view.getValue());
+    }
+
+    @Override
+    public void dispose() {
+        DateRangeView view = getSkinnable();
+        view.valueProperty().removeListener(valueChangeListener);
+        view.getPresets().removeListener(presetsChangeListener);
+        view.orientationProperty().removeListener(orientationChangeListener);
+        view.presetsLocationProperty().removeListener(presetsLocationChangeListener);
+        super.dispose();
     }
 
     private void updateLayout() {

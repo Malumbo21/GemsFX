@@ -39,6 +39,17 @@ public class TimePickerSkin extends ToggleVisibilityComboBoxSkin<TimePicker> {
     private final Region spacer;
     private final HBox box;
 
+    private final InvalidationListener buildViewListener = it -> buildView();
+    private final InvalidationListener updateFieldValuesListener = it -> updateFieldValues();
+    private final InvalidationListener updateFormatListener = it -> updateFormat();
+    private final InvalidationListener showingListener = it -> {
+        if (getSkinnable().isShowing()) {
+            show();
+        } else {
+            hide();
+        }
+    };
+
     public TimePickerSkin(TimePicker picker) {
         super(picker);
 
@@ -94,8 +105,6 @@ public class TimePickerSkin extends ToggleVisibilityComboBoxSkin<TimePicker> {
         millisecondField.focusedProperty().addListener(updateFocusListener);
         editButton.focusedProperty().addListener(updateFocusListener);
 
-        InvalidationListener buildViewListener = it -> buildView();
-
         picker.hoursSeparatorProperty().addListener(buildViewListener);
         picker.minutesSeparatorProperty().addListener(buildViewListener);
         picker.secondsSeparatorProperty().addListener(buildViewListener);
@@ -103,23 +112,29 @@ public class TimePickerSkin extends ToggleVisibilityComboBoxSkin<TimePicker> {
 
         buildView();
 
-        picker.timeProperty().addListener(it -> updateFieldValues());
+        picker.timeProperty().addListener(updateFieldValuesListener);
         updateFieldValues();
 
-        picker.formatProperty().addListener(cl -> updateFormat());
+        picker.formatProperty().addListener(updateFormatListener);
 
         updateEmptyPseudoClass();
         updateFormat();
 
-        picker.showingProperty().addListener(it -> {
-            if (picker.isShowing()) {
-                show();
-            } else {
-                hide();
-            }
-        });
+        picker.showingProperty().addListener(showingListener);
 
         getChildren().add(box);
+    }
+
+    @Override
+    public void dispose() {
+        TimePicker picker = getSkinnable();
+        picker.hoursSeparatorProperty().removeListener(buildViewListener);
+        picker.minutesSeparatorProperty().removeListener(buildViewListener);
+        picker.secondsSeparatorProperty().removeListener(buildViewListener);
+        picker.timeProperty().removeListener(updateFieldValuesListener);
+        picker.formatProperty().removeListener(updateFormatListener);
+        picker.showingProperty().removeListener(showingListener);
+        super.dispose();
     }
 
     @Override

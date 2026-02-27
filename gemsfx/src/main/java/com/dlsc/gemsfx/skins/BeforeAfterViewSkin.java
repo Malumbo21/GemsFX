@@ -14,11 +14,15 @@ import java.util.Objects;
 
 public class BeforeAfterViewSkin extends SkinBase<BeforeAfterView> {
 
-    private StackPane content = new StackPane();
-    private StackPane divider = new StackPane();
-    private StackPane handle = new StackPane();
+    private final StackPane content = new StackPane();
+    private final StackPane divider = new StackPane();
+    private final StackPane handle = new StackPane();
+
     private double startX;
     private double startY;
+
+    private final InvalidationListener updateListener = it -> updateView();
+    private final InvalidationListener dividerPositionListener = it -> getSkinnable().requestLayout();
 
     public BeforeAfterViewSkin(BeforeAfterView view) {
         super(view);
@@ -58,16 +62,25 @@ public class BeforeAfterViewSkin extends SkinBase<BeforeAfterView> {
         clip.heightProperty().bind(view.heightProperty());
         content.setClip(clip);
 
-        InvalidationListener updateListener = it -> updateView();
         view.beforeProperty().addListener(updateListener);
         view.afterProperty().addListener(updateListener);
         view.orientationProperty().addListener(updateListener);
 
-        view.dividerPositionProperty().addListener(it -> view.requestLayout());
+        view.dividerPositionProperty().addListener(dividerPositionListener);
 
         getChildren().addAll(content, divider, handle);
 
         updateView();
+    }
+
+    @Override
+    public void dispose() {
+        BeforeAfterView view = getSkinnable();
+        view.beforeProperty().removeListener(updateListener);
+        view.afterProperty().removeListener(updateListener);
+        view.orientationProperty().removeListener(updateListener);
+        view.dividerPositionProperty().removeListener(dividerPositionListener);
+        super.dispose();
     }
 
     @Override

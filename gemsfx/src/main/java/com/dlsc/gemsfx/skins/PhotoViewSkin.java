@@ -5,6 +5,7 @@ import com.dlsc.gemsfx.PhotoView.ClipShape;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.beans.binding.Bindings;
+import javafx.beans.value.ChangeListener;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.geometry.Pos;
@@ -89,6 +90,12 @@ public class PhotoViewSkin extends SkinBase<PhotoView> {
         private double startY;
         private double startX;
 
+        private InvalidationListener layoutProgressListener;
+        private ChangeListener<Image> photoChangeListenerForLayout;
+        private InvalidationListener cropProgressListener;
+        private ChangeListener<Image> photoChangeListenerForCrop;
+        private InvalidationListener cropListener;
+
         public ImageBox(PhotoView view) {
             cropService = new CropService();
 
@@ -103,22 +110,51 @@ public class PhotoViewSkin extends SkinBase<PhotoView> {
             imageView.effectProperty().bind(view.photoEffectProperty());
             imageView.setManaged(false);
 
-            view.photoProperty().addListener(it -> {
-                Image photo = view.getPhoto();
-                if (photo != null) {
-                    if (photo.isBackgroundLoading()) {
-                        photo.progressProperty().addListener(it2 -> {
-                            if (photo.getProgress() == 1.0) {
-                                requestLayout();
-                            }
-                        });
+            layoutProgressListener = it2 -> {
+                if (imageView.getImage() != null && imageView.getImage().getProgress() == 1.0) {
+                    requestLayout();
+                }
+            };
+            photoChangeListenerForLayout = (obs, oldPhoto, newPhoto) -> {
+                if (oldPhoto != null) {
+                    oldPhoto.progressProperty().removeListener(layoutProgressListener);
+                }
+                if (newPhoto != null) {
+                    if (newPhoto.isBackgroundLoading()) {
+                        newPhoto.progressProperty().addListener(layoutProgressListener);
                     } else {
                         requestLayout();
                     }
                 } else {
                     requestLayout();
                 }
-            });
+            };
+            cropProgressListener = it2 -> {
+                if (imageView.getImage() != null && imageView.getImage().getProgress() == 1.0) {
+                    crop();
+                }
+            };
+            photoChangeListenerForCrop = (obs, oldPhoto, newPhoto) -> {
+                if (oldPhoto != null) {
+                    oldPhoto.progressProperty().removeListener(cropProgressListener);
+                }
+                if (getSkinnable().isCreateCroppedImage()) {
+                    if (newPhoto != null) {
+                        if (newPhoto.isBackgroundLoading()) {
+                            newPhoto.progressProperty().addListener(cropProgressListener);
+                        } else {
+                            crop();
+                        }
+                    }
+                }
+            };
+
+            view.photoProperty().addListener(photoChangeListenerForLayout);
+            // Apply initial photo state
+            Image initialPhoto = view.getPhoto();
+            if (initialPhoto != null && initialPhoto.isBackgroundLoading()) {
+                initialPhoto.progressProperty().addListener(layoutProgressListener);
+            }
 
             setOnMousePressed(evt -> {
                 if (view.isEditable()) {
@@ -170,16 +206,13 @@ public class PhotoViewSkin extends SkinBase<PhotoView> {
             updateClip();
             updatePlaceholder(null, view.getPlaceholder());
 
-            InvalidationListener cropListener = it -> {
-                if (view.isCreateCroppedImage()) {
-                    Image photo = view.getPhoto();
+            cropListener = it -> {
+                PhotoView pv = getSkinnable();
+                if (pv.isCreateCroppedImage()) {
+                    Image photo = pv.getPhoto();
                     if (photo != null) {
                         if (photo.isBackgroundLoading()) {
-                            photo.progressProperty().addListener(it2 -> {
-                                if (photo.getProgress() == 1.0) {
-                                    crop();
-                                }
-                            });
+                            photo.progressProperty().addListener(cropProgressListener);
                         } else {
                             crop();
                         }
@@ -187,7 +220,7 @@ public class PhotoViewSkin extends SkinBase<PhotoView> {
                 }
             };
 
-            view.photoProperty().addListener(cropListener);
+            view.photoProperty().addListener(photoChangeListenerForCrop);
             view.photoZoomProperty().addListener(cropListener);
             view.photoTranslateXProperty().addListener(cropListener);
             view.photoTranslateYProperty().addListener(cropListener);

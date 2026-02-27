@@ -4,6 +4,7 @@ import com.dlsc.gemsfx.SelectionBox;
 import javafx.animation.FadeTransition;
 import javafx.animation.Transition;
 import javafx.application.Platform;
+import javafx.beans.InvalidationListener;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -11,7 +12,10 @@ import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableList;
 import javafx.css.PseudoClass;
+import javafx.event.EventHandler;
+import javafx.scene.control.MultipleSelectionModel;
 import javafx.geometry.Bounds;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
@@ -66,12 +70,54 @@ public class SelectionBoxSkin<T> extends SkinBase<SelectionBox<T>> {
     private final ChangeListener<T> selectItemChangedListener = (obs, ov, nv) -> handleSelectionChange();
     private final ListChangeListener<T> selectItemsChangeListener = change -> handleSelectionChange();
     private final ChangeListener<SelectionMode> selectionModeChangeListener = (obs, oldMode, newMode) -> updatePseudoAndPopupContent();
+    private final ChangeListener<ObservableList<T>> itemsChangeListener = (obs, oldItems, newItems) -> updatePseudoAndPopupContent();
+    private final InvalidationListener itemConverterChangeListener = it -> updateDisplayLabelText();
+    private final ChangeListener<MultipleSelectionModel<T>> selectionModelChangeListener;
+    private final EventHandler<MouseEvent> mouseClickedHandler;
+    private final MapChangeListener<Object, Object> propertiesChangeListener;
 
     public SelectionBoxSkin(SelectionBox<T> control) {
         super(control);
         this.control = control;
 
         popup = new SelectionPopup(control);
+
+        selectionModelChangeListener = (obs, oldModel, newModel) -> {
+            if (oldModel != null) {
+                oldModel.selectedItemProperty().removeListener(selectItemChangedListener);
+                oldModel.getSelectedItems().removeListener(selectItemsChangeListener);
+                oldModel.selectionModeProperty().removeListener(selectionModeChangeListener);
+            }
+            if (newModel != null) {
+                newModel.selectedItemProperty().addListener(selectItemChangedListener);
+                newModel.getSelectedItems().addListener(selectItemsChangeListener);
+                newModel.selectionModeProperty().addListener(selectionModeChangeListener);
+            }
+            popup.initializePopupContent();
+        };
+        mouseClickedHandler = event -> {
+            if (!control.isDisabled() && !control.isReadOnly()) {
+                control.requestFocus();
+                if (popup.isShowing()) {
+                    popup.hide();
+                } else {
+                    popup.show(control);
+                }
+            }
+        };
+        propertiesChangeListener = change -> {
+            if (change.wasAdded()) {
+                if (change.getKey().equals(SHOW_POPUP_PROPERTY)) {
+                    if (Boolean.TRUE.equals(change.getValueAdded())) {
+                        showPopup();
+                    } else {
+                        hidePopup();
+                    }
+                    control.getProperties().remove(SHOW_POPUP_PROPERTY);
+                }
+            }
+        };
+
         popup.showingProperty().subscribe(isShowing -> control.pseudoClassStateChanged(SHOWING_POPUP_PSEUDO_CLASS, isShowing));
         popup.onShowingProperty().bind(control.onShowingProperty());
         popup.onShownProperty().bind(control.onShownProperty());
@@ -116,29 +162,17 @@ public class SelectionBoxSkin<T> extends SkinBase<SelectionBox<T>> {
     }
 
     private void addListenerToControl() {
-        control.itemsProperty().addListener((obs, oldItems, newItems) -> updatePseudoAndPopupContent());
+        control.itemsProperty().addListener(itemsChangeListener);
 
-        control.itemConverterProperty().addListener((obs, oldConverter, newConverter) -> updateDisplayLabelText());
-        control.selectedItemsConverterProperty().addListener((obs, oldConverter, newConverter) -> updateDisplayLabelText());
-        control.promptTextProperty().addListener((obs, oldText, newText) -> updateDisplayLabelText());
+        control.itemConverterProperty().addListener(itemConverterChangeListener);
+        control.selectedItemsConverterProperty().addListener(itemConverterChangeListener);
+        control.promptTextProperty().addListener(itemConverterChangeListener);
 
         control.getSelectionModel().selectedItemProperty().addListener(selectItemChangedListener);
         control.getSelectionModel().getSelectedItems().addListener(selectItemsChangeListener);
         control.getSelectionModel().selectionModeProperty().addListener(selectionModeChangeListener);
 
-        control.selectionModelProperty().addListener((obs, oldModel, newModel) -> {
-            if (oldModel != null) {
-                oldModel.selectedItemProperty().removeListener(selectItemChangedListener);
-                oldModel.getSelectedItems().removeListener(selectItemsChangeListener);
-                oldModel.selectionModeProperty().removeListener(selectionModeChangeListener);
-            }
-            if (newModel != null) {
-                newModel.selectedItemProperty().addListener(selectItemChangedListener);
-                newModel.getSelectedItems().addListener(selectItemsChangeListener);
-                newModel.selectionModeProperty().addListener(selectionModeChangeListener);
-            }
-            popup.initializePopupContent();
-        });
+        control.selectionModelProperty().addListener(selectionModelChangeListener);
 
         // Handle readOnly property
         control.readOnlyProperty().subscribe(isNowReadOnly -> {
@@ -151,29 +185,9 @@ public class SelectionBoxSkin<T> extends SkinBase<SelectionBox<T>> {
         });
 
         // Add event handler to control to show the popup
-        control.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
-            if (!control.isDisabled() && !control.isReadOnly()) {
-                control.requestFocus();
-                if (popup.isShowing()) {
-                    popup.hide();
-                } else {
-                    popup.show(control);
-                }
-            }
-        });
+        control.addEventHandler(MouseEvent.MOUSE_CLICKED, mouseClickedHandler);
 
-        control.getProperties().addListener((MapChangeListener<Object, Object>) change -> {
-            if (change.wasAdded()) {
-                if (change.getKey().equals(SHOW_POPUP_PROPERTY)) {
-                    if (Boolean.TRUE.equals(change.getValueAdded())) {
-                        showPopup();
-                    } else {
-                        hidePopup();
-                    }
-                    control.getProperties().remove(SHOW_POPUP_PROPERTY);
-                }
-            }
-        });
+        control.getProperties().addListener(propertiesChangeListener);
     }
 
     public void showPopup() {
@@ -184,6 +198,21 @@ public class SelectionBoxSkin<T> extends SkinBase<SelectionBox<T>> {
 
     public void hidePopup() {
         popup.hide();
+    }
+
+    @Override
+    public void dispose() {
+        control.itemsProperty().removeListener(itemsChangeListener);
+        control.itemConverterProperty().removeListener(itemConverterChangeListener);
+        control.selectedItemsConverterProperty().removeListener(itemConverterChangeListener);
+        control.promptTextProperty().removeListener(itemConverterChangeListener);
+        control.getSelectionModel().selectedItemProperty().removeListener(selectItemChangedListener);
+        control.getSelectionModel().getSelectedItems().removeListener(selectItemsChangeListener);
+        control.getSelectionModel().selectionModeProperty().removeListener(selectionModeChangeListener);
+        control.selectionModelProperty().removeListener(selectionModelChangeListener);
+        control.removeEventHandler(MouseEvent.MOUSE_CLICKED, mouseClickedHandler);
+        control.getProperties().removeListener(propertiesChangeListener);
+        super.dispose();
     }
 
     private void handleSelectionChange() {

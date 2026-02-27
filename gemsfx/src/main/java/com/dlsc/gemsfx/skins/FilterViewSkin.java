@@ -6,8 +6,11 @@ import com.dlsc.gemsfx.FilterView;
 import com.dlsc.gemsfx.FilterView.Filter;
 import com.dlsc.gemsfx.SearchTextField;
 import javafx.application.Platform;
+import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
+import javafx.beans.value.ChangeListener;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
@@ -35,6 +38,28 @@ public class FilterViewSkin<T> extends SkinBase<FilterView<T>> {
     private final ScrollPane scrollPane = new ScrollPane();
     private final VBox container;
 
+    private final Map<Filter, CheckMenuItem> filterItemMap = new HashMap<>();
+
+    private final InvalidationListener updateGroupsListener = it -> updateGroups();
+    private final ListChangeListener<Object> filterGroupsChangeListener = it -> updateGroups();
+    private final ListChangeListener<Object> filtersChangeListener = it -> updateFilters();
+    private final InvalidationListener filterTextListener = it -> updateFilters();
+    private final InvalidationListener scrollThresholdListener = it -> updateFilters();
+    private final ListChangeListener<Object> filtersMenuUpdateListener = it -> Platform.runLater(() -> {
+        for (Filter filter : filterItemMap.keySet()) {
+            CheckMenuItem menuItem = filterItemMap.get(filter);
+            menuItem.setSelected(getSkinnable().getFilters().contains(filter));
+        }
+    });
+    private final ChangeListener<javafx.scene.Node> extrasChangeListener = (obs, oldExtras, newExtras) -> {
+        if (oldExtras != null) {
+            headerBox.getChildren().remove(oldExtras);
+        }
+        if (newExtras != null) {
+            headerBox.getChildren().add(newExtras);
+        }
+    };
+
     public FilterViewSkin(FilterView<T> view) {
         super(view);
 
@@ -56,12 +81,12 @@ public class FilterViewSkin<T> extends SkinBase<FilterView<T>> {
         searchTextField.managedProperty().bind(view.textFilterProviderProperty().isNotNull());
         searchTextField.textProperty().bindBidirectional(view.filterTextProperty());
 
-        view.textFilterProviderProperty().addListener(it -> updateGroups());
-        view.getFilterGroups().addListener((Observable it) -> updateGroups());
+        view.textFilterProviderProperty().addListener(updateGroupsListener);
+        view.getFilterGroups().addListener(filterGroupsChangeListener);
 
-        view.getFilters().addListener((Observable it) -> updateFilters());
-        view.filterTextProperty().addListener(it -> updateFilters());
-        view.textFilterProviderProperty().addListener(it -> updateFilters());
+        view.getFilters().addListener(filtersChangeListener);
+        view.filterTextProperty().addListener(filterTextListener);
+        view.textFilterProviderProperty().addListener(filterTextListener);
 
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
@@ -71,7 +96,7 @@ public class FilterViewSkin<T> extends SkinBase<FilterView<T>> {
                 Bindings.when(Bindings.size(view.filtersProperty()).greaterThan(view.scrollThresholdProperty()))
                         .then(filtersPane)
                         .otherwise((ChipsViewContainer) null));
-        view.scrollThresholdProperty().addListener(it -> updateFilters());
+        view.scrollThresholdProperty().addListener(scrollThresholdListener);
 
         container = new VBox(headerBox, filterGroupsPane, filtersPane);
         container.getStyleClass().add("filter-container");
@@ -81,26 +106,28 @@ public class FilterViewSkin<T> extends SkinBase<FilterView<T>> {
         updateGroups();
         updateFilters();
 
-        getSkinnable().getFilters().addListener((Observable it) -> Platform.runLater(() -> {
-            for (Filter filter : filterItemMap.keySet()) {
-                CheckMenuItem menuItem = filterItemMap.get(filter);
-                menuItem.setSelected(getSkinnable().getFilters().contains(filter));
-            }
-        }));
+        getSkinnable().getFilters().addListener(filtersMenuUpdateListener);
 
         headerBox.setFillHeight(true);
         headerBox.getStyleClass().add("header-box");
         headerBox.visibleProperty().bind(view.showHeaderProperty());
         headerBox.managedProperty().bind(view.showHeaderProperty());
 
-        view.extrasProperty().addListener((obs, oldExtras, newExtras) -> {
-            if (oldExtras != null) {
-                headerBox.getChildren().remove(oldExtras);
-            }
-            if (newExtras != null) {
-                headerBox.getChildren().add(newExtras);
-            }
-        });
+        view.extrasProperty().addListener(extrasChangeListener);
+    }
+
+    @Override
+    public void dispose() {
+        FilterView<T> view = getSkinnable();
+        view.textFilterProviderProperty().removeListener(updateGroupsListener);
+        view.getFilterGroups().removeListener(filterGroupsChangeListener);
+        view.getFilters().removeListener(filtersChangeListener);
+        view.filterTextProperty().removeListener(filterTextListener);
+        view.textFilterProviderProperty().removeListener(filterTextListener);
+        view.scrollThresholdProperty().removeListener(scrollThresholdListener);
+        view.getFilters().removeListener(filtersMenuUpdateListener);
+        view.extrasProperty().removeListener(extrasChangeListener);
+        super.dispose();
     }
 
     private void createHeaderBox() {
@@ -141,8 +168,6 @@ public class FilterViewSkin<T> extends SkinBase<FilterView<T>> {
             headerBox.getChildren().add(view.getExtras());
         }
     }
-
-    private final Map<Filter, CheckMenuItem> filterItemMap = new HashMap<>();
 
     private void updateGroups() {
         filterGroupsPane.getChildren().clear();
