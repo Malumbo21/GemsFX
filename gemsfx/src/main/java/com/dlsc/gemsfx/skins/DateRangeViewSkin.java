@@ -102,7 +102,7 @@ public class DateRangeViewSkin extends SkinBase<DateRangeView> {
             if (!selectionModel.getSelectedDates().isEmpty() && !endCalendarView.getSelectionModel().getSelectedDates().isEmpty()) {
                 LocalDate st = selectionModel.getSelectedDate();
                 LocalDate et = selectionModel.getSelectedEndDate();
-                return et.isBefore(st);
+                return st != null && et != null && et.isBefore(st);
             }
             return false;
         }, selectionModel.getSelectedDates(), endCalendarView.getSelectionModel().getSelectedDates()));
