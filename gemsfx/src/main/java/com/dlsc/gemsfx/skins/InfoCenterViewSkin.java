@@ -67,7 +67,7 @@ public class InfoCenterViewSkin extends SkinBase<InfoCenterView> {
     private final InvalidationListener listItemsListener = it -> {
         // We want the info center to switch back to the normal view when the user
         // removes the last notification inside the list view. If there are no more notifications
-        // at all then also hide the info center.
+        // at all, then also hide the info center.
         InfoCenterView infoCenterView = getSkinnable();
         if (infoCenterView.getShowAllGroup() != null && singleGroupListView.getItems().isEmpty()) {
             getSkinnable().setShowAllGroup(null);
