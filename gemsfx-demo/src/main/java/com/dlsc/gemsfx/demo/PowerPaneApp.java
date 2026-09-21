@@ -188,13 +188,6 @@ public class PowerPaneApp extends GemApplication {
         Button node2Button = new Button("Node 2");
         node2Button.setOnAction(evt -> dialogPane.showNode(INFORMATION, "Generic Node Dialog", createGenericNode()));
 
-        Button busyButton = new Button("Busy");
-        busyButton.setOnAction(evt -> dialogPane.showBusyIndicator().onClose(buttonType -> {
-            if (buttonType.equals(ButtonType.CANCEL)) {
-                dialogPane.showInformation("Cancelled", "The busy dialog has been cancelled via the ESC key.");
-            }
-        }));
-
         Button maxButton = new Button("Maximize");
         maxButton.setOnAction(evt -> {
             DialogPane.Dialog<Object> dialog = new DialogPane.Dialog<>(dialogPane, INFORMATION);
@@ -213,7 +206,7 @@ public class PowerPaneApp extends GemApplication {
         });
 
         VBox vBox = new VBox(10, infoButton, warnButton, errorButton, confirmButton,
-                inputSingleLineButton, inputMultiLineButton, node1Button, node2Button, busyButton,
+                inputSingleLineButton, inputMultiLineButton, node1Button, node2Button,
                 overlappingButton, maxButton);
 
         Duration duration0 = Duration.ZERO;
