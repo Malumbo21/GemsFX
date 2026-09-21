@@ -1,9 +1,10 @@
 package com.dlsc.gemsfx.util;
 
 import com.github.weisj.jsvg.SVGDocument;
-import com.github.weisj.jsvg.attributes.ViewBox;
-import com.github.weisj.jsvg.geometry.size.FloatSize;
+import com.github.weisj.jsvg.parser.LoaderContext;
 import com.github.weisj.jsvg.parser.SVGLoader;
+import com.github.weisj.jsvg.view.FloatSize;
+import com.github.weisj.jsvg.view.ViewBox;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.Image;
 
@@ -117,7 +118,7 @@ public final class SVGUtil {
 
     private static SVGDocument loadSVGDocument(InputStream is) {
         SVGLoader loader = new SVGLoader();
-        return loader.load(is);
+        return loader.load(is, null, LoaderContext.createDefault());
     }
 
     /**
