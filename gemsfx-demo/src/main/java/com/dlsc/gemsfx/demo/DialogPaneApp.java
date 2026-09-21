@@ -2,6 +2,7 @@ package com.dlsc.gemsfx.demo;
 
 import com.dlsc.gemsfx.DialogPane;
 import com.dlsc.gemsfx.DialogPane.Dialog;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
@@ -123,11 +124,15 @@ public class DialogPaneApp extends GemApplication {
         });
 
         Button busyButton = new Button("Busy");
-        busyButton.setOnAction(evt -> dialogPane.showBusyIndicator().onClose(buttonType -> {
-            if (buttonType.equals(ButtonType.CANCEL)) {
-                dialogPane.showInformation("Cancelled", "The busy dialog has been cancelled via the ESC key.");
-            }
-        }));
+        busyButton.setOnAction(evt -> {
+            Dialog<Void> dialog = dialogPane.showBusyIndicator();
+
+            // the busy dialog has no buttons at all, hence the user can not cancel it. The
+            // application has to close it itself once the background work has finished.
+            PauseTransition backgroundWork = new PauseTransition(Duration.seconds(5));
+            backgroundWork.setOnFinished(finished -> dialog.cancel());
+            backgroundWork.play();
+        });
 
         Button maxButton = new Button("Maximize");
         maxButton.setOnAction(evt -> {

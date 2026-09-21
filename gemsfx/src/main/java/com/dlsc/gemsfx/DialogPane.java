@@ -13,6 +13,7 @@ import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import javafx.beans.WeakInvalidationListener;
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.BooleanPropertyBase;
 import javafx.beans.property.DoubleProperty;
@@ -46,6 +47,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.Skin;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.control.skin.ButtonBarSkin;
@@ -53,6 +55,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -125,16 +128,35 @@ public class DialogPane extends StackPane {
 
     private final EventHandler<KeyEvent> escapeHandler = evt -> {
         if (KeyCombination.keyCombination("ESC+SHIFT").match(evt)) {
-            hideAllDialogs();
+            if (cancelDialogsFromTop()) {
+                evt.consume();
+            }
         } else if (evt.getCode() == KeyCode.ESCAPE) { // hide the last dialog that was opened
             ObservableList<Dialog<?>> dialogs = getDialogs();
             if (!dialogs.isEmpty()) {
                 Dialog<?> dialog = dialogs.get(dialogs.size() - 1);
-                dialog.cancel();
-                evt.consume();
+                if (dialog.requestCancel()) {
+                    evt.consume();
+                }
             }
         }
     };
+
+    /*
+     * Cancels the dialogs from the top-most one downwards and stops as soon as a dialog
+     * is encountered that can not be cancelled.
+     */
+    private boolean cancelDialogsFromTop() {
+        List<Dialog<?>> list = new ArrayList<>(getDialogs());
+        boolean cancelledAny = false;
+        for (int i = list.size() - 1; i >= 0; i--) {
+            if (!list.get(i).requestCancel()) {
+                break;
+            }
+            cancelledAny = true;
+        }
+        return cancelledAny;
+    }
 
     private final WeakEventHandler<KeyEvent> weakEscapeHandler = new WeakEventHandler<>(escapeHandler);
 
@@ -1164,6 +1186,8 @@ public class DialogPane extends StackPane {
 
             setOnResize(new DefaultResizeHandler(this));
 
+            cancellable.bind(Bindings.createBooleanBinding(() -> findCancelButtonType().isPresent(), buttonTypes));
+
             preferencesProperty().addListener((obs, oldPreferences, preferences) -> {
                 if (preferences != null) {
                     double width = preferences.getDouble("width", -1d);
@@ -1544,6 +1568,72 @@ public class DialogPane extends StackPane {
             pane.hideDialog(this);
             setValue(null);
             commit(ButtonType.CANCEL);
+        }
+
+        /**
+         * Cancels the dialog, but only if it is actually cancellable (see {@link #cancellableProperty()}).
+         * If the dialog declares a dedicated cancel button then this method behaves exactly like
+         * {@link #cancel()}. If the dialog only declares a single (non-cancel) button, e.g. an
+         * information dialog with an "OK" button, then that button gets pressed instead.
+         *
+         * @return true if the dialog was closed by this call
+         */
+        public boolean requestCancel() {
+            Optional<ButtonType> cancelButtonType = findCancelButtonType();
+
+            if (!cancelButtonType.isPresent()) {
+                return false;
+            }
+
+            ButtonType buttonType = cancelButtonType.get();
+            ButtonBar.ButtonData buttonData = buttonType.getButtonData();
+
+            if (buttonData != null && buttonData.isCancelButton()) {
+                cancel();
+            } else {
+                press(buttonType);
+            }
+
+            return true;
+        }
+
+        /*
+         * Returns the button type that will be used when the user cancels the dialog, e.g. via the
+         * escape key. This is either the first button type that is flagged as a cancel button or the
+         * only button type of the dialog.
+         */
+        private Optional<ButtonType> findCancelButtonType() {
+            Optional<ButtonType> result = buttonTypes.stream()
+                    .filter(buttonType -> buttonType.getButtonData() != null && buttonType.getButtonData().isCancelButton())
+                    .findFirst();
+
+            if (!result.isPresent() && buttonTypes.size() == 1) {
+                result = Optional.of(buttonTypes.get(0));
+            }
+
+            return result;
+        }
+
+        // cancellable
+
+        private final ReadOnlyBooleanWrapper cancellable = new ReadOnlyBooleanWrapper(this, "cancellable");
+
+        public final boolean isCancellable() {
+            return cancellable.get();
+        }
+
+        /**
+         * Determines whether the dialog can be cancelled by the user, e.g. by pressing the escape key
+         * or by using the close button in the dialog header. A dialog is considered cancellable if it
+         * either shows a button that is flagged as a cancel button (e.g. {@link ButtonType#CANCEL},
+         * {@link ButtonType#NO}, {@link ButtonType#CLOSE}) or if it only shows a single button.
+         *
+         * @return true if the dialog can be cancelled by the user
+         * @see #getButtonTypes()
+         * @see #requestCancel()
+         */
+        public final ReadOnlyBooleanProperty cancellableProperty() {
+            return cancellable.getReadOnlyProperty();
         }
 
         // on button pressed
@@ -2030,7 +2120,13 @@ public class DialogPane extends StackPane {
      *
      * @see DialogPane#setHeaderFactory(Callback)
      */
-    public static class DialogHeader extends StackPane {
+    public static class DialogHeader extends HBox {
+
+        /*
+         * A long title must not blow up the width of the entire dialog. Beyond this width the
+         * title gets ellipsised instead, unless the dialog is wider anyway because of its content.
+         */
+        private static final double MAX_TITLE_DRIVEN_WIDTH = 400;
 
         /**
          * Constructs a new header for the given dialog.
@@ -2038,22 +2134,25 @@ public class DialogPane extends StackPane {
          * @param dialog the model object defining the dialog
          */
         public DialogHeader(Dialog<?> dialog) {
-            setAlignment(Pos.CENTER);
+            setAlignment(Pos.CENTER_LEFT);
+            setFillHeight(false);
             getStyleClass().add("header");
+
+            ImageView dialogIcon = new ImageView();
+            dialogIcon.getStyleClass().addAll("icon");
+            dialogIcon.setPreserveRatio(true);
+            dialogIcon.setSmooth(true);
+
+            // dialog types without an icon (e.g. "blank") must not add the header spacing
+            BooleanBinding iconVisible = showIconProperty().and(dialogIcon.imageProperty().isNotNull());
+            dialogIcon.visibleProperty().bind(iconVisible);
+            dialogIcon.managedProperty().bind(iconVisible);
 
             Label dialogTitle = new Label(ResourceBundleManager.getString(ResourceBundleManager.BundleType.DIALOG_PANE, "header.title.fallback", "Dialog"));
             dialogTitle.setMaxWidth(Double.MAX_VALUE);
             dialogTitle.getStyleClass().add("title");
             dialogTitle.textProperty().bind(dialog.titleProperty());
-            VBox.setVgrow(dialogTitle, Priority.NEVER);
-
-            ImageView dialogIcon = new ImageView();
-            dialogIcon.getStyleClass().addAll("icon");
-            dialogIcon.visibleProperty().bind(showIconProperty());
-            dialogIcon.managedProperty().bind(showIconProperty());
-
-            VBox vBox = new VBox(dialogIcon, dialogTitle);
-            vBox.getStyleClass().add("title-and-icon-box");
+            HBox.setHgrow(dialogTitle, Priority.ALWAYS);
 
             // close icon / button support
             FontIcon fontIcon = new FontIcon(MaterialDesign.MDI_CLOSE);
@@ -2064,12 +2163,16 @@ public class DialogPane extends StackPane {
             closeButton.setAlignment(Pos.CENTER);
             closeButton.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
             closeButton.getStyleClass().add("close-button");
-            closeButton.visibleProperty().bind(dialog.showCloseButtonProperty().and(showCloseButtonProperty()));
-            closeButton.managedProperty().bind(dialog.showCloseButtonProperty().and(showCloseButtonProperty()));
-            closeButton.setOnAction(evt -> dialog.cancel());
-            StackPane.setAlignment(closeButton, Pos.TOP_RIGHT);
+            closeButton.visibleProperty().bind(dialog.showCloseButtonProperty().and(showCloseButtonProperty()).and(dialog.cancellableProperty()));
+            closeButton.managedProperty().bind(dialog.showCloseButtonProperty().and(showCloseButtonProperty()).and(dialog.cancellableProperty()));
+            closeButton.setOnAction(evt -> dialog.requestCancel());
 
-            getChildren().setAll(vBox, closeButton);
+            getChildren().setAll(dialogIcon, dialogTitle, closeButton);
+        }
+
+        @Override
+        protected double computePrefWidth(double height) {
+            return Math.min(super.computePrefWidth(height), MAX_TITLE_DRIVEN_WIDTH);
         }
 
         private final BooleanProperty showCloseButton = new SimpleBooleanProperty(this, "showCloseButton", true);
@@ -2131,7 +2234,7 @@ public class DialogPane extends StackPane {
             if (dialog.getType().equals(Type.INPUT)) {
                 // initializing skin early or the skin will grab the focus later on for one of its buttons instead of
                 // leaving it with the control used for the input
-                setSkin(new ButtonBarSkin(this));
+                setSkin(new RightAlignedButtonBarSkin(this));
             }
 
             getStyleClass().add("footer");
@@ -2147,6 +2250,11 @@ public class DialogPane extends StackPane {
             if (!dialog.getType().equals(Type.BLANK)) {
                 createButtons();
             }
+        }
+
+        @Override
+        protected Skin<?> createDefaultSkin() {
+            return new RightAlignedButtonBarSkin(this);
         }
 
         /**
@@ -2283,6 +2391,24 @@ public class DialogPane extends StackPane {
             button.setDefaultButton(buttonData.isDefaultButton());
             button.setCancelButton(buttonData.isCancelButton());
             return button;
+        }
+    }
+
+    /*
+     * The default button bar skin centers its buttons because it aligns its internal container
+     * programmatically, which a user agent stylesheet can not override. This skin right-aligns the
+     * buttons instead. Applications can still override the alignment via their own stylesheet
+     * (".button-bar > .container").
+     */
+    private static class RightAlignedButtonBarSkin extends ButtonBarSkin {
+
+        public RightAlignedButtonBarSkin(ButtonBar buttonBar) {
+            super(buttonBar);
+
+            getChildren().stream()
+                    .filter(HBox.class::isInstance)
+                    .map(HBox.class::cast)
+                    .forEach(container -> container.setAlignment(Pos.CENTER_RIGHT));
         }
     }
 

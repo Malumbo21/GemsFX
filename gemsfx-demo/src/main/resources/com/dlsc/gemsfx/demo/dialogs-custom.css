@@ -12,7 +12,7 @@
 }
 
 .dialog-pane > .content-pane {
-    -fx-background-radius: 3px;
+    -fx-background-radius: 8px;
     -fx-background-color: #3C434C;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, .26), 20, 0.19, -1, 6);
 }
@@ -33,7 +33,7 @@
     -fx-padding: 10px 30px;
     -fx-spacing: 10px;
     -fx-background-color: rgba(100, 112, 122, 0.2);
-    -fx-alignment: center;
+    -fx-background-radius: 0 0 8px 8px;
 }
 
 .dialog-pane > .content-pane > .vbox > .button-bar .button {
@@ -75,17 +75,17 @@
     -fx-background-insets: -3px, 0px;
 }
 
-.dialog-pane > .content-pane > .vbox > .header > .title-and-icon-box {
-    -fx-padding: 25px 50px 0px 50px;
-    -fx-background-color: transparent;
+.dialog-pane > .content-pane > .vbox > .header {
+    -fx-padding: 10px 8px 10px 14px;
+    -fx-spacing: 8px;
+    -fx-alignment: center-left;
+    -fx-background-color: #2A3038, #1A2028;
     -fx-background-insets: 0, 0 0 1 0;
-    -fx-spacing: 15px;
+    -fx-background-radius: 8px 8px 0 0, 8px 8px 0 0;
 }
 
-.dialog-pane > .content-pane > .vbox > .header > .title-and-icon-box > .title {
-    -fx-alignment: center;
+.dialog-pane > .content-pane > .vbox > .header > .title {
     -fx-padding: 0;
-    -fx-font-size: 24px;
     -fx-font-family: "Inter Bold";
     -fx-text-fill: white;
 }
@@ -102,23 +102,19 @@
     -fx-padding: 30px 30px 50px 30px;
 }
 
-.dialog-pane > .content-pane > .vbox > .header > .title-and-icon-box {
-    -fx-alignment: center;
-}
-
-.dialog-pane > .content-pane.information > .vbox > .header > .title-and-icon-box > .icon {
+.dialog-pane > .content-pane.information > .vbox > .header > .icon {
     -fx-image: url("icon_dialog_info.png");
 }
 
-.dialog-pane > .content-pane.warning > .vbox > .header > .title-and-icon-box > .icon {
+.dialog-pane > .content-pane.warning > .vbox > .header > .icon {
     -fx-image: url("icon_dialog_warning.png");
 }
 
-.dialog-pane > .content-pane.error > .vbox > .header > .title-and-icon-box > .icon {
+.dialog-pane > .content-pane.error > .vbox > .header > .icon {
     -fx-image: url("icon_dialog_error.png");
 }
 
-.dialog-pane > .content-pane.confirmation > .vbox > .header > .title-and-icon-box > .icon {
+.dialog-pane > .content-pane.confirmation > .vbox > .header > .icon {
     -fx-image: url("icon_dialog_help.png");
 }
 

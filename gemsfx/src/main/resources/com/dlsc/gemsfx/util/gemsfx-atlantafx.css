@@ -2067,14 +2067,11 @@
 .dialog-pane > .content-pane > .vbox > .button-bar > .button:default {
 }
 
-.dialog-pane > .content-pane > .vbox > .header > .title-and-icon-box {
+.dialog-pane > .content-pane > .vbox > .header {
+    -fx-background-color: -color-border-default, -color-bg-subtle;
 }
 
-.dialog-pane > .content-pane > .vbox > .header > .title-and-icon-box > .title {
-}
-
-.dialog-pane > .content-pane > .vbox > .header > .title-and-icon-box {
-    -fx-alignment: center;
+.dialog-pane > .content-pane > .vbox > .header > .title {
 }
 
 .dialog-pane > .content-pane > .vbox > .content {
@@ -2085,22 +2082,22 @@
 }
 
 .dialog-pane > .content-pane > .vbox > .content.padding {
-    -fx-padding: 20px;
+    -fx-padding: 0.9em;
 }
 
 .dialog-pane > .content-pane > .vbox > .header > .close-button {
-    -fx-background-color: rgba(100, 112, 122, 0.2);
+    -fx-background-color: transparent;
 }
 
-.dialog-pane > .content-pane > .close-button:hover {
-    -fx-background-color: rgba(100, 112, 122, 0.4);
+.dialog-pane > .content-pane > .vbox > .header > .close-button:hover {
+    -fx-background-color: -color-bg-subtle;
 }
 
-.dialog-pane > .content-pane > .close-button:pressed {
-    -fx-background-color: rgba(100, 112, 122, 0.1);
+.dialog-pane > .content-pane > .vbox > .header > .close-button:pressed {
+    -fx-background-color: -color-bg-inset;
 }
 
-.dialog-pane > .content-pane > .close-button .ikonli-font-icon {
+.dialog-pane > .content-pane > .vbox > .header > .close-button .ikonli-font-icon {
     -fx-icon-color: -color-fg-default;
 }
 

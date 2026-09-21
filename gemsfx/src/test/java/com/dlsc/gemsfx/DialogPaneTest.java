@@ -2,7 +2,13 @@ package com.dlsc.gemsfx;
 
 import javafx.util.Duration;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Label;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -94,6 +100,92 @@ public class DialogPaneTest extends FxTestBase {
         runFx(() -> pane.hideDialog(d));
         waitForFxEvents();
         assertFalse(pane.isShowingDialog());
+    }
+
+    @Test
+    public void dialogWithCancelButtonIsCancellable() {
+        DialogPane pane = layout(invoke(DialogPane::new));
+        runFx(() -> pane.setAnimateDialogs(false));
+        DialogPane.Dialog<ButtonType> dialog = invoke(() -> pane.showWarning("T", "M"));
+        assertTrue(dialog.isCancellable());
+    }
+
+    @Test
+    public void confirmationDialogIsCancellable() {
+        DialogPane pane = layout(invoke(DialogPane::new));
+        runFx(() -> pane.setAnimateDialogs(false));
+        DialogPane.Dialog<ButtonType> dialog = invoke(() -> pane.showConfirmation("T", "M"));
+        assertTrue(dialog.isCancellable());
+    }
+
+    @Test
+    public void singleButtonDialogIsCancellable() {
+        DialogPane pane = layout(invoke(DialogPane::new));
+        runFx(() -> pane.setAnimateDialogs(false));
+        DialogPane.Dialog<ButtonType> dialog = invoke(() -> pane.showInformation("T", "M"));
+        assertTrue(dialog.isCancellable());
+    }
+
+    @Test
+    public void dialogWithoutButtonsIsNotCancellable() {
+        DialogPane pane = layout(invoke(DialogPane::new));
+        runFx(() -> pane.setAnimateDialogs(false));
+        DialogPane.Dialog<Void> dialog = invoke(() -> pane.showNode(DialogPane.Type.BLANK, "T", new Label("content"), Collections.emptyList()));
+        assertFalse(dialog.isCancellable());
+    }
+
+    @Test
+    public void dialogWithMultipleNonCancelButtonsIsNotCancellable() {
+        DialogPane pane = layout(invoke(DialogPane::new));
+        runFx(() -> pane.setAnimateDialogs(false));
+        DialogPane.Dialog<Void> dialog = invoke(() -> pane.showNode(DialogPane.Type.BLANK, "T", new Label("content"), Arrays.asList(ButtonType.OK, ButtonType.APPLY)));
+        assertFalse(dialog.isCancellable());
+    }
+
+    @Test
+    public void requestCancelDoesNothingWhenNotCancellable() {
+        DialogPane pane = layout(invoke(DialogPane::new));
+        runFx(() -> pane.setAnimateDialogs(false));
+        DialogPane.Dialog<Void> dialog = invoke(() -> pane.showNode(DialogPane.Type.BLANK, "T", new Label("content"), Collections.emptyList()));
+        assertFalse(invoke(dialog::requestCancel));
+        waitForFxEvents();
+        assertFalse(pane.getDialogs().isEmpty());
+    }
+
+    @Test
+    public void requestCancelCommitsCancelWhenCancelButtonPresent() {
+        DialogPane pane = layout(invoke(DialogPane::new));
+        runFx(() -> pane.setAnimateDialogs(false));
+        List<ButtonType> pressed = new ArrayList<>();
+        DialogPane.Dialog<ButtonType> dialog = invoke(() -> pane.showWarning("T", "M"));
+        runFx(() -> dialog.setOnClose(pressed::add));
+        assertTrue(invoke(dialog::requestCancel));
+        waitForFxEvents();
+        assertTrue(pane.getDialogs().isEmpty());
+        assertEquals(Collections.singletonList(ButtonType.CANCEL), pressed);
+    }
+
+    @Test
+    public void requestCancelPressesSingleButton() {
+        DialogPane pane = layout(invoke(DialogPane::new));
+        runFx(() -> pane.setAnimateDialogs(false));
+        List<ButtonType> pressed = new ArrayList<>();
+        DialogPane.Dialog<ButtonType> dialog = invoke(() -> pane.showInformation("T", "M"));
+        runFx(() -> dialog.setOnClose(pressed::add));
+        assertTrue(invoke(dialog::requestCancel));
+        waitForFxEvents();
+        assertTrue(pane.getDialogs().isEmpty());
+        assertEquals(Collections.singletonList(ButtonType.OK), pressed);
+    }
+
+    @Test
+    public void cancellableUpdatesWhenButtonTypesChange() {
+        DialogPane pane = layout(invoke(DialogPane::new));
+        runFx(() -> pane.setAnimateDialogs(false));
+        DialogPane.Dialog<ButtonType> dialog = invoke(() -> pane.showWarning("T", "M"));
+        assertTrue(dialog.isCancellable());
+        runFx(() -> dialog.getButtonTypes().setAll(ButtonType.OK, ButtonType.APPLY));
+        assertFalse(dialog.isCancellable());
     }
 
     @Test

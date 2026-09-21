@@ -5,8 +5,8 @@
 }
 
 .dialog-pane > .content-pane {
-    -fx-background-radius: 3px;
-    -fx-background-color: -fx-base;
+    -fx-background-radius: 8px;
+    -fx-background-color: -fx-background;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, .26), 20, 0.19, -1, 6);
 }
 
@@ -16,6 +16,7 @@
 
 .dialog-pane > .content-pane > .glass-pane {
     -fx-background-color: black;
+    -fx-background-radius: 8px;
 }
 
 .dialog-pane > .content-pane > .vbox {
@@ -25,10 +26,10 @@
 }
 
 .dialog-pane > .content-pane > .vbox > .button-bar {
-    -fx-padding: 10px;
+    -fx-padding: 0.75em 0.9em;
     -fx-spacing: 10px;
-    -fx-background-color: rgba(100, 112, 122, 0.2);
-    -fx-alignment: center;
+    -fx-background-color: transparent;
+    -fx-background-radius: 0 0 8px 8px;
 }
 
 .dialog-pane > .content-pane > .vbox > .button-bar > .button {
@@ -37,37 +38,41 @@
 .dialog-pane > .content-pane > .vbox > .button-bar > .button:default {
 }
 
-.dialog-pane > .content-pane > .vbox > .header > .title-and-icon-box {
-    -fx-padding: 25px 50px 0px 50px;
-    -fx-background-color: transparent;
+.dialog-pane > .content-pane > .vbox > .header {
+    -fx-padding: 0.75em 0.45em 0.75em 0.9em;
+    -fx-spacing: 8px;
+    -fx-alignment: center-left;
+    -fx-background-color: derive(-fx-background, -20%), derive(-fx-background, -8%);
     -fx-background-insets: 0, 0 0 1 0;
-    -fx-spacing: 15px;
+    -fx-background-radius: 8px 8px 0 0, 8px 8px 0 0;
 }
 
-.dialog-pane > .content-pane > .vbox > .header > .title-and-icon-box > .title {
-    -fx-alignment: center;
+.dialog-pane > .content-pane > .vbox > .header > .title {
     -fx-padding: 0;
-    -fx-font-size: 24px;
-    -fx-font-family: "Rubik Medium";
+    -fx-font-size: 1.2em;
+    -fx-font-weight: bold;
 }
 
-.dialog-pane > .content-pane > .vbox > .header > .title-and-icon-box {
-    -fx-alignment: center;
+.dialog-pane > .content-pane > .vbox > .header > .icon {
+    -fx-fit-width: 16px;
+    -fx-fit-height: 16px;
+    -fx-preserve-ratio: true;
+    -fx-smooth: true;
 }
 
-.dialog-pane > .content-pane.information > .vbox > .header > .title-and-icon-box > .icon {
+.dialog-pane > .content-pane.information > .vbox > .header > .icon {
     -fx-image: url("dialog-information.png");
 }
 
-.dialog-pane > .content-pane.warning > .vbox > .header > .title-and-icon-box > .icon {
+.dialog-pane > .content-pane.warning > .vbox > .header > .icon {
     -fx-image: url("dialog-warning.png");
 }
 
-.dialog-pane > .content-pane.error > .vbox > .header > .title-and-icon-box > .icon {
+.dialog-pane > .content-pane.error > .vbox > .header > .icon {
     -fx-image: url("dialog-error.png");
 }
 
-.dialog-pane > .content-pane.confirmation > .vbox > .header > .title-and-icon-box > .icon {
+.dialog-pane > .content-pane.confirmation > .vbox > .header > .icon {
     -fx-image: url("dialog-confirm.png");
 }
 
@@ -79,35 +84,34 @@
 }
 
 .dialog-pane > .content-pane > .vbox > .content.padding {
-    -fx-padding: 30px;
+    -fx-padding: 0.9em;
 }
 
 .dialog-pane > .content-pane > .vbox > .header > .close-button {
     -fx-background-radius: 3px;
-    -fx-background-color: rgba(100, 112, 122, 0.2);
+    -fx-background-color: transparent;
     -fx-background-insets: 0px;
     -fx-padding: 2px;
-    -size: 24px;
+    -size: 22px;
     -fx-pref-width: -size;
     -fx-pref-height: -size;
     -fx-min-width: -size;
     -fx-min-height: -size;
     -fx-max-width: -size;
     -fx-max-height: -size;
-    -fx-translate-x: -5px;
-    -fx-translate-y: 5px;
 }
 
-.dialog-pane > .content-pane > .close-button:hover {
+.dialog-pane > .content-pane > .vbox > .header > .close-button:hover {
+    -fx-background-color: rgba(100, 112, 122, 0.25);
+}
+
+.dialog-pane > .content-pane > .vbox > .header > .close-button:pressed {
     -fx-background-color: rgba(100, 112, 122, 0.4);
 }
 
-.dialog-pane > .content-pane > .close-button:pressed {
-    -fx-background-color: rgba(100, 112, 122, 0.1);
-}
-
-.dialog-pane > .content-pane > .close-button .ikonli-font-icon {
+.dialog-pane > .content-pane > .vbox > .header > .close-button .ikonli-font-icon {
     -fx-icon-color: -fx-text-background-color;
+    -fx-icon-size: 14px;
 }
 
 .dialog-pane > .content-pane > .vbox > .content > .error-container {

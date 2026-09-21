@@ -16,3 +16,6 @@ scenicView.properties
 /docs/manuals/src/.raster-cache/
 **/__pycache__/
 .DS_Store
+
+# Superpowers brainstorming session artifacts
+/.superpowers/
