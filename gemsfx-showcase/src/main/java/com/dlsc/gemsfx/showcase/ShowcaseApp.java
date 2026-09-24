@@ -439,8 +439,8 @@ public class ShowcaseApp extends Application {
 
         // the window buttons are provided by AtlantaFX, hence no space has to be reserved for
         // the buttons of the operating system
-        headerBar.setLeadingSystemPadding(false);
-        headerBar.setTrailingSystemPadding(false);
+        headerBar.setLeftSystemPadding(false);
+        headerBar.setRightSystemPadding(false);
 
         // AtlantaFX places the buttons on the side that matches the current operating system and
         // takes care of the interaction with the window, including the "inactive" and "maximized"

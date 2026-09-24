@@ -96,8 +96,8 @@ public class WelcomePane extends StackPane {
         // minimized, and maximized
         HeaderBar headerBar = new HeaderBar();
         headerBar.getStyleClass().add("welcome-header-bar");
-        headerBar.setLeadingSystemPadding(false);
-        headerBar.setTrailingSystemPadding(false);
+        headerBar.setLeftSystemPadding(false);
+        headerBar.setRightSystemPadding(false);
         headerBar.setMaxHeight(Region.USE_PREF_SIZE);
         StackPane.setAlignment(headerBar, Pos.TOP_LEFT);
         ShowcaseApp.createHeaderButtonGroup().install(headerBar, stage);
