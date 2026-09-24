@@ -23,7 +23,7 @@
             "type": "NPM",
             "url": ""
         }],
-        "javaVersion": "25",
+        "javaVersion": "27",
         "jar": "target/gemsfx-showcase-4.4.4.jar",
         "javafx": true,
         "title": "GemsFX Showcase Application",
